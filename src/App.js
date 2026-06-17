@@ -1,5 +1,5 @@
 // ============================================================
-// MBSE-COM v1.0 — 범용 Engineering Management (Diagram·Spec·Requirement·Interface·Scope)
+// MBSE-COM v1.1 — 범용 Engineering Management (Diagram·Spec·Requirement·Interface·Scope)
 // EM System: Interface Type 분류 + ICD/TQ 관리 + Scope/Vendor + 9단계 IC Status
 // Excel 6 Sheets: IC / ICD / Equipment / Connection / Scope / Requirements
 // React + ReactFlow  |  package.json: "reactflow": "^11.11.4"
@@ -151,7 +151,7 @@ const exportToExcel = async (nodes, edges) => {
   // ══════════════════════════════════════════════════════════
   // v10.1 SHEET 0: Scope of Supply (담당자 배정표)
   // Plant / Package / Equipment 계층별로
-  //  - POSCO 담당 (PM·운전·정비, 복수)
+  //  - 발주처 담당 (PM·운전·정비, 복수)
   //  - Supplier 담당 (대표·PM·Mech·Piping·Process·EIC·Civil·Arch)
   // ══════════════════════════════════════════════════════════
   const sosRows = [];
@@ -170,9 +170,9 @@ const exportToExcel = async (nodes, edges) => {
       "Type":      d.areaType || d.equipType || n.type || "",
       "Vendor":    d.vendorName || "",
     };
-    // POSCO 담당 (역할별 컬럼)
+    // 발주처 담당 (역할별 컬럼)
     SOS_POSCO_ROLES.forEach(r => {
-      row[`POSCO·${r}`] = sos.posco?.[r] || "";
+      row[`발주처·${r}`] = sos.posco?.[r] || "";
     });
     // Supplier 담당 (역할별 컬럼)
     SOS_SUPPLIER_ROLES.forEach(r => {
@@ -425,7 +425,7 @@ const exportToExcel = async (nodes, edges) => {
   nodes.filter(n => n.type === "area").forEach(n => {
     const d = n.data || {};
     if (!d.wbsCode && !d.vendorName && !d.scopeText) return; // 입력된 것만
-    // POSCO/Eng 담당자 합치기
+    // 발주처/Eng 담당자 합치기
     const poscoStr = d.poscoStaff
       ? Object.entries(d.poscoStaff).filter(([,v])=>v).map(([k,v])=>`${k}: ${v}`).join(" / ")
       : "";
@@ -445,8 +445,8 @@ const exportToExcel = async (nodes, edges) => {
       "Vendor 국가":     d.vendorCountry || "",
       "계약번호":        d.vendorContract || "",
       "Interface Coordinator": d.vendorICA || "",
-      "POSCO 담당":      poscoStr,
-      "Engineering 담당": engStr,
+      "발주처 담당":      poscoStr,
+      "엔지니어링 담당": engStr,
       "Node ID":        n.id,
     });
   });
@@ -845,7 +845,7 @@ const exportToExcel = async (nodes, edges) => {
     "WBS Code","Area","Type","Team","Discipline",
     "범위 기술","포함 범위","제외 범위",
     "Vendor 회사","Vendor 국가","계약번호","Interface Coordinator",
-    "POSCO 담당","Engineering 담당",
+    "발주처 담당","엔지니어링 담당",
   ];
   const scAoa = [
     [Object.assign(XS.hdr("Scope Register — Work Package & Vendor"), {
@@ -854,7 +854,7 @@ const exportToExcel = async (nodes, edges) => {
     scHdrs.map(h => XS.shdr(h)),
     ...scopeRows.map((row,i) => scHdrs.map((h) => {
       const v = row[h] ?? "";
-      const wrap = ["범위 기술","포함 범위","제외 범위","POSCO 담당","Engineering 담당"].includes(h);
+      const wrap = ["범위 기술","포함 범위","제외 범위","발주처 담당","엔지니어링 담당"].includes(h);
       return XS.alt(v, i,
         { h: wrap?"left":"center", wrap,
           bold: h==="WBS Code", fc: h==="WBS Code"?"1D4ED8":"000000" });
@@ -875,11 +875,11 @@ const exportToExcel = async (nodes, edges) => {
   // ── v10.1 SHEET 0: Scope of Supply ─────────────────────────
   const sosHdrs = [
     "구분","이름","Type","Vendor",
-    ...SOS_POSCO_ROLES.map(r=>`POSCO·${r}`),
+    ...SOS_POSCO_ROLES.map(r=>`발주처·${r}`),
     ...SOS_SUPPLIER_ROLES.map(r=>`Supplier·${r}`),
     "Node ID",
   ];
-  // 그룹 헤더 (POSCO / Supplier 구분)
+  // 그룹 헤더 (발주처 / Supplier 구분)
   const poscoStart = 4;
   const poscoEnd   = poscoStart + SOS_POSCO_ROLES.length - 1;
   const supStart   = poscoEnd + 1;
@@ -889,22 +889,22 @@ const exportToExcel = async (nodes, edges) => {
     [Object.assign(XS.hdr("Scope of Supply — 담당자 배정표"), {
       s: XS.s({ bold:true, sz:13, bg:"1F3864", fc:"FFFFFF", bc:"1F3864" })
     }), ...Array(sosHdrs.length-1).fill(null)],
-    // Row 1: 그룹 헤더 (기본정보 / POSCO / Supplier)
+    // Row 1: 그룹 헤더 (기본정보 / 발주처 / Supplier)
     [
       XS.c("기본 정보", {bold:true,bg:"D9E1F2",fc:"1F3864"}),
       null,null,null,
-      XS.c("POSCO 담당", {bold:true,bg:"DDEBF7",fc:"1F3864"}),
+      XS.c("발주처 담당", {bold:true,bg:"DDEBF7",fc:"1F3864"}),
       ...Array(SOS_POSCO_ROLES.length-1).fill(null),
       XS.c("Supplier 담당", {bold:true,bg:"FCE4D6",fc:"843C0C"}),
       ...Array(SOS_SUPPLIER_ROLES.length-1).fill(null),
       null,
     ],
     // Row 2: 컬럼 헤더
-    sosHdrs.map(h => XS.shdr(h.replace("POSCO·","").replace("Supplier·",""))),
+    sosHdrs.map(h => XS.shdr(h.replace("발주처·","").replace("Supplier·",""))),
     // 데이터 행
     ...sosRows.map((row,i) => sosHdrs.map((h,j) => {
       const v = row[h] ?? "";
-      const isPosco = h.startsWith("POSCO·");
+      const isPosco = h.startsWith("발주처·");
       const isSup   = h.startsWith("Supplier·");
       return XS.alt(v, i, {
         h: j<1?"center":"left",
@@ -920,7 +920,7 @@ const exportToExcel = async (nodes, edges) => {
   wsSOS["!merges"] = [
     { s:{r:0,c:0}, e:{r:0,c:sosHdrs.length-1} },             // 타이틀
     { s:{r:1,c:0}, e:{r:1,c:3} },                            // 기본정보
-    { s:{r:1,c:poscoStart}, e:{r:1,c:poscoEnd} },            // POSCO
+    { s:{r:1,c:poscoStart}, e:{r:1,c:poscoEnd} },            // 발주처
     { s:{r:1,c:supStart},   e:{r:1,c:supEnd} },              // Supplier
   ];
   wsSOS["!rows"] = [{hpt:30},{hpt:20},{hpt:22},...sosRows.map(()=>({hpt:22}))];
@@ -1423,8 +1423,10 @@ const importFromExcel = async (file, nodes, edges, setNodes, setEdges) => {
             apply("Vendor 국가", "vendorCountry");
             apply("계약번호", "vendorContract");
             apply("Interface Coordinator", "vendorICA");
-            if ("POSCO 담당" in row && pick(row,"POSCO 담당","")) newData.poscoStaff = parseStaff(pick(row,"POSCO 담당",""));
-            if ("Engineering 담당" in row && pick(row,"Engineering 담당","")) newData.engStaff = parseStaff(pick(row,"Engineering 담당",""));
+            if ("발주처 담당" in row && pick(row,"발주처 담당","")) newData.poscoStaff = parseStaff(pick(row,"발주처 담당",""));
+            else if ("POSCO 담당" in row && pick(row,"POSCO 담당","")) newData.poscoStaff = parseStaff(pick(row,"POSCO 담당",""));
+            if ("엔지니어링 담당" in row && pick(row,"엔지니어링 담당","")) newData.engStaff = parseStaff(pick(row,"엔지니어링 담당",""));
+            else if ("Engineering 담당" in row && pick(row,"Engineering 담당","")) newData.engStaff = parseStaff(pick(row,"Engineering 담당",""));
             updatedNodes[idx] = { ...n, data: newData };
             matched++;
           });
@@ -1433,6 +1435,7 @@ const importFromExcel = async (file, nodes, edges, setNodes, setEdges) => {
 
         // ── Scope of Supply 시트 → Node sos 업데이트 ──
         const wsSOS = findSheet("Scope of Supply","ScopeOfSupply","SoS")
+                   || findSheetByColumns(["발주처·PM","Supplier·대표","Node ID"])
                    || findSheetByColumns(["POSCO·PM","Supplier·대표","Node ID"]);
         if (wsSOS) {
           const rows = readSheet(wsSOS, "Node ID", "Scope of Supply");
@@ -1446,7 +1449,7 @@ const importFromExcel = async (file, nodes, edges, setNodes, setEdges) => {
             const n = updatedNodes[idx];
             const posco = {};
             SOS_POSCO_ROLES.forEach(r => {
-              const v = pick(row, `POSCO·${r}`, "").trim();
+              const v = pick(row, `발주처·${r}`, "").trim();
               if (v) posco[r] = v;
             });
             const supplier = {};
@@ -1759,7 +1762,7 @@ const normalizeAreaZIndex = (nodes) => {
 };
 // Equipment 카테고리 분리
 // (v10.14: EQUIPMENT_UT / EQUIPMENT_ME 는 FBR Code 카탈로그로 통합됨 — EQUIPMENT_LEGACY 참조)
-// ── v10.14: HyREX FBR Equipment 코드 체계 — UT/ME 통합 단일 카탈로그 ──
+// ── v10.14: Plant FBR Equipment 코드 체계 — UT/ME 통합 단일 카탈로그 ──
 // Equipment List의 코드 패턴(숫자+알파벳+숫자)에서 알파벳 = 장비 종류
 // 하나의 코드에 복수 Block 허용 (예: B → Bin/Vessel, Tank, Pond...)
 // ── MBSE-COM v1.0: 범용 Block Library (최소 Generic + 대표 범용기기) ──
@@ -1907,8 +1910,8 @@ const SOS_SUPPLIER_ROLES = ["대표","PM","Mech.","Piping","Process","EIC","Civi
 // v10.3: IT (Interface Tie-in) — Area↔Area 통합 관리
 //   캡쳐의 "Interconnection & Integration 정의" + "Check List" 양식 디지털화
 // ─────────────────────────────────────────────────────────────
-const IT_SUPPLIER_OPTIONS    = ["POSCO","ENC","DX","기타"];
-const IT_RESPONSIBLE_OPTIONS = ["TF조업","TF설비","TF내화물","투엔실","ENC","DX","기타"];
+const IT_SUPPLIER_OPTIONS    = ["발주처","ENC","DX","기타"];
+const IT_RESPONSIBLE_OPTIONS = ["조업","정비","내화물","ENC","DX","기타"];
 const IT_CHECKLIST_CATEGORIES = [
   { key:"supply",  label:"장치 공급구분",      hdrBg:"#FEF3C7", hdrFc:"#92400E" },
   { key:"process", label:"Process",            hdrBg:"#DBEAFE", hdrFc:"#1E40AF" },
@@ -1934,7 +1937,7 @@ const normalizeITFactor = (f) =>
 //  → 신버전 { supplier, supplierOwner, responsible, responsibleOwner, items:[{text,status}] }
 //  content 문자열은 줄바꿈 단위로 분해해 개별 항목으로 마이그레이션
 const normalizeITChecklistCat = (c) => {
-  if (!c) return { supplier:"ENC", supplierOwner:"", responsible:"TF조업", responsibleOwner:"", items:[] };
+  if (!c) return { supplier:"ENC", supplierOwner:"", responsible:"조업", responsibleOwner:"", items:[] };
   let items;
   if (Array.isArray(c.items)) {
     items = c.items.map(it =>
@@ -1958,7 +1961,7 @@ const normalizeITChecklistCat = (c) => {
 const makeDefaultITChecklist = () => {
   const obj = {};
   IT_CHECKLIST_CATEGORIES.forEach(c => {
-    obj[c.key] = { supplier:"ENC", supplierOwner:"", responsible:"TF조업", responsibleOwner:"", items:[] };
+    obj[c.key] = { supplier:"ENC", supplierOwner:"", responsible:"조업", responsibleOwner:"", items:[] };
   });
   return obj;
 };
@@ -2272,7 +2275,7 @@ const ICONS = {
   "Cooling Tower":<><path d="M7,4 Q10,11 7.5,21 L16.5,21 Q14,11 17,4 Z" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M9,2.5 Q10,1 11,2.5 M13,2.5 Q14,1 15,2.5" fill="none" stroke="currentColor" strokeWidth="0.9"/><line x1="9" y1="17" x2="15" y2="17" stroke="currentColor" strokeWidth="0.9" strokeDasharray="1.6 1"/></>,
   Brench:         <><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.5"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor" strokeWidth="1.5"/><line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5"/><line x1="12" y1="2" x2="12" y2="8" stroke="currentColor" strokeWidth="1.5"/></>,
 
-  // ── v10.11: HyREX FBR 코드 체계 대표 심볼 (P&ID 스타일) ──
+  // ── v10.11: Plant FBR 코드 체계 대표 심볼 (P&ID 스타일) ──
   // A: 유동층 반응기 — 세로 원통 + grid + 유동층 입자
   Reactor:        <><rect x="7" y="3" width="10" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5"/><line x1="7" y1="16" x2="17" y2="16" stroke="currentColor" strokeWidth="1" strokeDasharray="2 1"/><circle cx="10" cy="9" r="0.9" fill="currentColor"/><circle cx="14" cy="7" r="0.9" fill="currentColor"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/></>,
   // B: 저장조 — 상부 사각 + 하부 호퍼 콘
@@ -4443,7 +4446,7 @@ const Inspector = memo(({ sel,nodes,edges,onUpdateNode,onUpdateEdge,onDeleteSel,
   const renderSoS = () => (
     <>
       <div style={{ fontWeight:700,fontSize:11,color:"#1f4e79",margin:"10px 0 6px",borderTop:"2px solid #ddebf7",paddingTop:7 }}>
-        👷 POSCO 담당 (복수 입력 가능)
+        👷 발주처 담당 (복수 입력 가능)
       </div>
       {SOS_POSCO_ROLES.map(r=>(
         <div key={r} style={{ marginBottom:5 }}>
@@ -5096,8 +5099,8 @@ const Inspector = memo(({ sel,nodes,edges,onUpdateNode,onUpdateEdge,onDeleteSel,
             <label style={L}>Interface Coordinator</label>
             <input style={I} value={d.vendorICA||""} onChange={e=>upN("vendorICA",e.target.value)} placeholder="ICA 담당자"/>
 
-            {/* ── POSCO 담당 (복수) ── */}
-            <div style={{ fontWeight:700,fontSize:11,color:"#1d4ed8",margin:"10px 0 6px",borderTop:"2px solid #eff6ff",paddingTop:7 }}>👷 POSCO 담당</div>
+            {/* ── 발주처 담당 (복수) ── */}
+            <div style={{ fontWeight:700,fontSize:11,color:"#1d4ed8",margin:"10px 0 6px",borderTop:"2px solid #eff6ff",paddingTop:7 }}>👷 발주처 담당</div>
             {POSCO_ORGS.map(org=>(
               <div key={org} style={{ marginBottom:6 }}>
                 <label style={L}>{org} 담당자 (쉼표로 복수 입력)</label>
@@ -5108,8 +5111,8 @@ const Inspector = memo(({ sel,nodes,edges,onUpdateNode,onUpdateEdge,onDeleteSel,
               </div>
             ))}
 
-            {/* ── Engineering 담당 (복수) ── */}
-            <div style={{ fontWeight:700,fontSize:11,color:"#1d4ed8",margin:"10px 0 6px",borderTop:"2px solid #eff6ff",paddingTop:7 }}>🔧 Engineering 담당</div>
+            {/* ── 엔지니어링 담당 (복수) ── */}
+            <div style={{ fontWeight:700,fontSize:11,color:"#1d4ed8",margin:"10px 0 6px",borderTop:"2px solid #eff6ff",paddingTop:7 }}>🔧 엔지니어링 담당</div>
             {VENDOR_DISCIPLINES.map(disc=>(
               <div key={disc} style={{ marginBottom:6 }}>
                 <label style={L}>{disc} 담당자 (쉼표로 복수)</label>
@@ -5413,7 +5416,7 @@ const ITLineModal = ({ edge, nodes, allITEdges, onSave, onClose, onNavigate, onD
               <label style={fieldL}>기능 운영간 Inter-connection (서술)</label>
               <textarea value={functionalDesc} onChange={e=>setFunctionalDesc(e.target.value)}
                 style={{ ...inputS, minHeight:80, resize:"vertical", lineHeight:1.4 }}
-                placeholder="예: HyREX TUF & Bucket Elevator 는 Diverter Chute & Oxide Bin 의 가동조건에 따름..."/>
+                placeholder="예: Plant Material Handling & Bucket Elevator 는 Diverter Chute & Oxide Bin 의 가동조건에 따름..."/>
             </div>
 
             <div>
@@ -5430,7 +5433,7 @@ const ITLineModal = ({ edge, nodes, allITEdges, onSave, onClose, onNavigate, onD
                   <div key={i} style={{ display:"flex", gap:5, marginBottom:4, alignItems:"center" }}>
                     <span style={{ fontSize:11, color:"#7c3aed", fontWeight:700, width:18 }}>{i+1}.</span>
                     <input value={f.text} onChange={e=>updateFactor(i, "text", e.target.value)}
-                      style={{ ...inputS, flex:2.2 }} placeholder="영향인자 (예: HyREX TUF 가동 여부 확인)"/>
+                      style={{ ...inputS, flex:2.2 }} placeholder="영향인자 (예: Plant Material Handling 가동 여부 확인)"/>
                     {/* 진행현황 — 상태별 색상 표시 */}
                     <select value={f.status} onChange={e=>updateFactor(i, "status", e.target.value)}
                       style={{
@@ -5439,9 +5442,9 @@ const ITLineModal = ({ edge, nodes, allITEdges, onSave, onClose, onNavigate, onD
                       }}>
                       {IT_FACTOR_STATUS.map(s=><option key={s.value} value={s.value}>{s.value}</option>)}
                     </select>
-                    {/* 담당자 — 추진반/ENC/DX 조직별 1~2명 키인 */}
+                    {/* 담당자 — 조업/정비/ENC/DX 조직별 1~2명 키인 */}
                     <input value={f.owner} onChange={e=>updateFactor(i, "owner", e.target.value)}
-                      style={{ ...inputS, flex:1.2 }} placeholder="담당자 (예: 추진반 홍길동)"/>
+                      style={{ ...inputS, flex:1.2 }} placeholder="담당자 (예: 조업 홍길동)"/>
                     <button onClick={()=>removeFactor(i)} style={{
                       background:"none", border:"none", color:"#dc2626", cursor:"pointer",
                       fontSize:14, padding:"0 4px",
@@ -6320,13 +6323,22 @@ const SpecImportModal = ({ nodes, onApply, onCancel }) => {
             </>
           ) : (
             <>
-              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12,padding:"8px 12px",background:"#f0fdf4",borderRadius:6,border:"1px solid #bbf7d0" }}>
-                <span style={{ fontSize:16 }}>✅</span>
+              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12,padding:"8px 12px",
+                background: totalMatches > 0 ? "#f0fdf4" : "#eff6ff",
+                borderRadius:6, border:`1px solid ${totalMatches > 0 ? "#bbf7d0" : "#bfdbfe"}` }}>
+                <span style={{ fontSize:16 }}>{totalMatches > 0 ? "✅" : "📐"}</span>
                 <div>
-                  <div style={{ fontWeight:700,fontSize:12,color:"#15803d" }}>
-                    {parsed.length}개 설비 파싱 완료 — MBSE 모델 매칭: {totalMatches}개 노드
+                  <div style={{ fontWeight:700,fontSize:12,color: totalMatches > 0 ? "#15803d" : "#1d4ed8" }}>
+                    {parsed.length}개 설비 파싱 완료{" — "}
+                    {totalMatches > 0
+                      ? `기존 Block ${totalMatches}개 매칭 → 사양 업데이트`
+                      : `신규 Block ${parsed.length}개 생성 예정`}
                   </div>
-                  <div style={{ fontSize:10,color:"#16a34a" }}>매칭된 노드에 사양이 자동 입력됩니다</div>
+                  <div style={{ fontSize:10,color: totalMatches > 0 ? "#16a34a" : "#2563eb" }}>
+                    {totalMatches > 0
+                      ? "기존 Block의 사양이 업데이트됩니다 (연결·배치 유지)"
+                      : "Item No. + 사양이 기입된 Block이 생성됩니다 — 배치·연결은 수작업으로 진행"}
+                  </div>
                 </div>
               </div>
 
@@ -6344,12 +6356,24 @@ const SpecImportModal = ({ nodes, onApply, onCancel }) => {
                         : <span style={{ fontSize:10,background:"#f1f5f9",color:"#94a3b8",borderRadius:4,padding:"1px 7px" }}>미매칭</span>
                       }
                     </div>
-                    <div style={{ padding:"8px 12px",display:"flex",flexWrap:"wrap",gap:"4px 12px" }}>
-                      {Object.entries(block).filter(([k])=>!["itemNos","equipName","quantity"].includes(k)).map(([k,v])=>(
-                        <div key={k} style={{ fontSize:10,color:"#475569" }}>
-                          <span style={{ color:"#94a3b8" }}>{k}:</span> <span style={{ fontWeight:600 }}>{v}</span>
-                        </div>
-                      ))}
+                    <div style={{ padding:"8px 12px",display:"flex",flexWrap:"wrap",gap:"3px 8px" }}>
+                      {Object.entries(block)
+                        .filter(([k,v])=>!["itemNos","normalizedKeys","equipName","quantity"].includes(k) && v)
+                        .map(([k,v])=>{
+                          const FL = {capacity:"용량",designP:"설계압력",designT:"설계온도",operPress:"운전압력",
+                            operTemp:"운전온도",material:"재질",kindOfLiquid:"유체",deliveryHead:"양정",
+                            suctionPress:"흡입압",dischargePress:"토출압",liquidTemp:"유체온도",
+                            construction:"형식",shaftSeal:"축봉",impeller:"임펠러재질",
+                            staticPress:"정압",noiseLevel:"소음",medium:"매체",inletPress:"입구압"};
+                          return (
+                            <div key={k} style={{ fontSize:9.5,color:"#475569",
+                              background:"#f8fafc",borderRadius:3,padding:"1px 5px",
+                              border:"1px solid #e2e8f0",whiteSpace:"nowrap" }}>
+                              <span style={{ color:"#94a3b8" }}>{FL[k]||k}:</span>{" "}
+                              <span style={{ fontWeight:600,color:"#1e293b" }}>{v}</span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 );
@@ -6372,9 +6396,11 @@ const SpecImportModal = ({ nodes, onApply, onCancel }) => {
           ) : (
             <>
               <button onClick={()=>{setParsed(null);setStatus("idle");setText("");}} style={{ background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"8px 16px",cursor:"pointer",fontSize:12 }}>다시 붙여넣기</button>
-              <button onClick={()=>onApply(parsed)} disabled={totalMatches===0}
-                style={{ background:totalMatches?"#1d4ed8":"#94a3b8",color:"#fff",border:"none",borderRadius:6,padding:"8px 20px",cursor:totalMatches?"pointer":"default",fontWeight:700,fontSize:12 }}>
-                ✅ {totalMatches}개 노드에 사양 적용
+              <button onClick={()=>onApply(parsed)}
+                style={{ background:"#1d4ed8",color:"#fff",border:"none",borderRadius:6,padding:"8px 20px",cursor:"pointer",fontWeight:700,fontSize:12 }}>
+                {totalMatches > 0
+                  ? `✅ ${totalMatches}개 Block 사양 업데이트`
+                  : `📐 ${parsed.length}개 Block 신규 생성`}
               </button>
             </>
           )}
@@ -7034,9 +7060,12 @@ const CanvasInner = () => {
       return guessTypeFromName(b.equipName, b.itemNos?.[0]);
     };
     const specOf = (b) => {
+      const EXCLUDE = new Set(["itemNos","normalizedKeys","equipName","quantity"]);
       const spec = {};
       Object.entries(b).forEach(([k,v]) => {
-        if (!["itemNos","normalizedKeys","equipName","quantity"].includes(k)) spec[k] = v;
+        if (!EXCLUDE.has(k) && v !== undefined && v !== null && String(v).trim() !== "") {
+          spec[k] = String(v).trim();
+        }
       });
       return spec;
     };
@@ -7049,9 +7078,9 @@ const CanvasInner = () => {
     });
 
     // ── ① 최초 생성 모드: Revision 0 + 매칭 Block 없음 ──────
-    if (projectMeta.revision === 0 && !anyMatch) {
+    if (!anyMatch) {  // 매칭되는 기존 Block이 없으면 신규 생성 (revision 무관)
       if (!window.confirm(
-        `📐 최초 생성 모드\n사양서의 ${parsedBlocks.length}개 Item으로 Block을 자동 생성하고\n구획별로 좌측부터 배치합니다.\n(설비 종류는 이름에서 유추, 애매하면 Machine — 추후 수정 가능)\n진행할까요?`)) return;
+        `📐 Block 자동 생성 (신규)\n\n사양서의 ${parsedBlocks.length}개 Item으로 Block을 생성합니다.\n\n✅ 각 Block에 Item No. + 전체 사양이 즉시 기입됩니다.\n✅ 초기 배치는 그리드 배열 → 수작업으로 이동/연결하세요.\n✅ 설비 종류는 이름에서 자동 유추 (애매하면 Machine)\n\n진행할까요?`)) return;
       // 그룹핑: Item No. 앞자리(숫자/문자)가 있으면 그 기준, 없으면 Block Type 기준
       const hasNumericPrefix = parsedBlocks.some(b => /^\d/.test(String(b.itemNos?.[0]||"")));
       const groups = {};
@@ -7074,23 +7103,41 @@ const CanvasInner = () => {
         arr.forEach((b, i) => {
           const sub = Math.floor(i / PER_COL), row = i % PER_COL;
           const itemNo = b.itemNos?.[0] || "";
+          const eqType = guessType(b);
+          const defaults = EQUIP_DEFAULTS[eqType] || {};
+          const spec = specOf(b);
           newNodes.push({
             id: uid("eq"), type: "equipment",
             position: { x: baseX + sub * 215, y: 60 + row * 115 },
-            data: { equipType: guessType(b), itemNo, label: b.equipName || "", ...specOf(b) },
+            data: {
+              equipType:    eqType,
+              itemNo,
+              label:        b.equipName || itemNo || eqType,
+              handles:      ["top","bottom","left","right"],
+              requirements: [],
+              ...defaults,   // 기본 사양값 먼저
+              ...spec,       // 사양서 파싱값으로 덮어씀 (Item No.+사양 완전 기입)
+            },
           });
         });
         baseX += Math.ceil(arr.length / PER_COL) * 215 + 90; // 그룹 간 구획 여백
       });
       setNodes(ns => [...ns, ...newNodes]);
-      setProjectMeta(pm => ({ ...pm, revision: 1,
+      const newRev = (projectMeta.revision || 0) + 1;
+      setProjectMeta(pm => ({ ...pm, revision: newRev,
         changeLog: [...(pm.changeLog||[]), {
-          rev: 1, date: new Date().toISOString(), requester: currentUser || "(미설정)",
-          changes: [{ itemNo:"-", name:`최초 생성`, field:"Block 자동 생성", before:"", after:`${newNodes.length}건` }],
+          rev: newRev, date: new Date().toISOString(), requester: currentUser || "(미설정)",
+          changes: newNodes.map(n => ({
+            itemNo: n.data.itemNo || "-",
+            name:   n.data.label  || "",
+            field:  "Block 신규 생성",
+            before: "",
+            after:  n.data.equipType || "",
+          })),
         }]}));
       setShowSpecImport(false);
-      setSaveMsg(`✅ 최초 생성: ${newNodes.length}개 Block 자동 배치 완료 (Rev.1)`);
-      setTimeout(()=>setSaveMsg(""), 4000);
+      setSaveMsg(`✅ ${newNodes.length}개 Block 생성 완료 (Rev.${newRev}) — 배치·연결은 수작업으로 진행하세요`);
+      setTimeout(()=>setSaveMsg(""), 6000);
       return;
     }
 
@@ -7114,10 +7161,15 @@ const CanvasInner = () => {
                          field: k, before: String(before ?? ""), after: String(v ?? "") });
         }
       });
-      // 머지 (사양서 키 순서 우선)
-      const merged = {};
-      Object.entries(specData).forEach(([k,v]) => { merged[k] = v; });
-      Object.entries(n.data || {}).forEach(([k,v]) => { if (!(k in merged)) merged[k] = v; });
+      // 머지: 사양서 값 우선, 앱 고유 데이터(연결·요구사항·sos·배치 등)는 보존
+      const PRESERVE = new Set(["requirements","sos","poscoStaff","engStaff",
+        "wbsCode","teamId","discipline","scopeText","inclusions","exclusions",
+        "vendorName","vendorCountry","vendorContract","vendorICA",
+        "autoInlets","autoOutlets","handles","showIO"]);
+      const merged = { ...n.data };
+      Object.entries(specData).forEach(([k,v]) => {
+        if (!PRESERVE.has(k)) merged[k] = v;
+      });
       planned.set(n.id, merged);
     });
 
@@ -7128,7 +7180,7 @@ const CanvasInner = () => {
     }
     const nextRev = (projectMeta.revision || 0) + 1;
     if (!window.confirm(
-      `🔄 수정 반영 모드\n변경 감지: ${changes.length}건 (Item ${new Set(changes.map(c=>c.itemNo)).size}개)\n\nRevision을 ${projectMeta.revision} → ${nextRev} 로 올리고 반영할까요?`)) return;
+      `🔄 사양 업데이트 모드\n변경 감지: ${changes.length}건 (Item ${new Set(changes.map(c=>c.itemNo)).size}개)\n\nRevision ${projectMeta.revision} → ${nextRev} 으로 올리고 반영할까요?`)) return;
     let requester = window.prompt("수정 요청자 이름을 입력하세요:", currentUser || "");
     if (requester === null) return; // 취소
     requester = requester.trim() || "(미입력)";
@@ -7139,7 +7191,7 @@ const CanvasInner = () => {
         rev: nextRev, date: new Date().toISOString(), requester, changes }],
     }));
     setShowSpecImport(false);
-    setSaveMsg(`✅ Rev.${nextRev} 반영: ${changes.length}건 변경 (요청: ${requester})`);
+    setSaveMsg(`✅ Rev.${nextRev} 반영: ${changes.length}건 사양 업데이트 (요청: ${requester})`);
     setTimeout(()=>setSaveMsg(""), 4000);
   },[nodes, projectMeta, currentUser, setNodes]);
 
@@ -7690,7 +7742,7 @@ const CanvasInner = () => {
                   style={{ ...inputSm, width:"100%" }}/>
               </div>
               <div style={{ fontSize:10, color:"#64748b", background:"#f1f5f9", borderRadius:5, padding:"5px 8px" }}>
-                PEM/EM은 사양서·엑셀·JSON Import 및 모든 입력 권한을 자동 보유합니다.
+                발주처 PEM/EM은 사양서·엑셀·JSON Import 및 모든 입력 권한을 자동 보유합니다.
                 PEM이 비어 있으면 권한 제한 없이 모두 입력 가능합니다. 조회는 항상 전원 가능.
               </div>
               {/* 참여자별 카테고리 권한 */}
